@@ -1,22 +1,26 @@
+#include <algorithm>
 #include <iostream>
+#include <list>
 #include <map>
 #include <memory>
 #include <queue>
+#include <stack>
+#include <string>
 #include <vector>
 
 struct Node {
   std::vector<std::vector<char>> state;
+  std::pair<int, int> path;
   int cost;
   std::vector<int> heights;
   std::vector<Node> nextNodes();
   std::vector<int> getHeights(std::vector<std::vector<char>> &s);
   void print_grid();
   Node(){};
-  Node(std::vector<std::vector<char>> &s, std::vector<int> &h, int c)
-      : state(s), heights(h), cost(c){};
+  Node(std::vector<std::vector<char>> &s, std::vector<int> &h, int c,
+       std::pair<int, int> &p)
+      : state(s), heights(h), cost(c), path(p){};
   Node(std::vector<std::vector<char>> &s) : state(s) {
-    // print_grid();
-    // std::cout << "heights: " << std::endl;
     for (int i = 0; i < s[0].size(); i++) {
       int curr_height = 0;
       for (int j = 0; j < s.size(); j++) {
@@ -26,10 +30,8 @@ struct Node {
         else
           curr_height++;
       }
-      // std::cout << curr_height << " ";
       heights.push_back(curr_height);
     }
-    // std::cout << std::endl;
     cost = 0;
   }
   bool is_goal_node(Node *goal_node);
@@ -64,12 +66,13 @@ bool Node::is_goal_node(Node *g_node) {
 // how will i compare my nodes cost
 class PqCompare {
  public:
-  bool operator()(std::tuple<Node*, int> n1, std::tuple<Node*, int> n2) const { 
-  	Node *a, *b; 
-  	int cost_a, cost_b;
-  	std::tie(a, cost_a) = n1;
-  	std::tie(b, cost_b) = n2;
-  	return (cost_a > cost_b); 
+  bool operator()(std::tuple<Node *, int> n1,
+                  std::tuple<Node *, int> n2) const {
+    Node *a, *b;
+    int cost_a, cost_b;
+    std::tie(a, cost_a) = n1;
+    std::tie(b, cost_b) = n2;
+    return (cost_a > cost_b);
   }
 };
 
@@ -89,30 +92,16 @@ std::vector<Node> Node::nextNodes() {
       if (j == i) {
         continue;
       }
-      // you can move
-      // std::cout << "i: " << i << " " << j << std::endl;
       if (heights[j] < state.size()) {
-        // std::cout << "from" << std::endl;
-        // curr_node->print_grid();
-
         std::swap(state[heights[j]][j], state[heights[i] - 1][i]);
         heights[j]++, heights[i]--;
         int cost = 1 + abs(i - j);
-        // std::cout << "cost: " << cost << std::endl;
-        next_nodes.push_back(Node(state, heights, cost));
-
-        // std::cout << "to" << std::endl;
-        // next_nodes.back().print_grid();
-
+        std::pair<int, int> p = std::make_pair(i, j);
+        next_nodes.push_back(Node(state, heights, cost, p));
         heights[j]--, heights[i]++;
         std::swap(state[heights[j]][j], state[heights[i] - 1][i]);
-        //  std::cout << "from2" << std::endl;
-        // curr_node->print_grid();
-        // std::cout << "----------------------" << std::endl;
-
       } else {
-        std::cout << "wut " << i << " " << j << std::endl;
-        break;
+        continue;
       }
     }
   }
@@ -130,6 +119,10 @@ std::vector<std::vector<char>> parse_state(std::string &in, int max_height,
     if (in[k] == '(') {
       while (in[k++] != ')') {
         if (isalpha(in[k])) {
+          if (i == max_height) {
+            std::cout << "No solution found\n";
+            exit(0);
+          }
           s[i][j] = in[k];
           i++;
         }
@@ -156,49 +149,55 @@ int count_platforms(std::string &in) {
 
 void UCS(Node *init_node, Node *goal_node) {
   // all my costs, this can help to see if i find the same node with lower cost
-  std::map<Node*, int> costs;
+  std::map<Node *, int> costs;
+  std::map<Node *, Node *> prev_path;
+  std::vector<std::string> paths;
   // in here i can have the path
-  // std::map<Node, Node> prev_nodes;
-  std::priority_queue<std::tuple<Node *, int>, std::vector<std::tuple<Node *, int>>, PqCompare> pq;
-
+  std::priority_queue<std::tuple<Node *, int>,
+                      std::vector<std::tuple<Node *, int>>, PqCompare>
+      pq;
   // cost of inital node
   costs[init_node] = 0;
   // add init node to the priority_queue
   pq.push(std::make_tuple(init_node, 0));
-  // int x;
+  int x = 0;
   while (!pq.empty()) {
     Node *curr_node;
     int curr_cost;
+    x++;
     std::tie(curr_node, curr_cost) = pq.top();
-    std::cout << "curr_node: " << std::endl;
-    curr_node->print_grid();
-    std::cout << "***********************" << std::endl;
     pq.pop();
     if (curr_cost > costs[curr_node]) {
-    	continue;
+      continue;
     }
-
     if (curr_node->is_goal_node(goal_node)) {
-      std::cout << "si se armo" << std::endl;
+      // print total cost
       std::cout << costs[curr_node] << std::endl;
+      // loop to the prev path to create the output path
+      auto it = curr_node;
+      while (prev_path.find(it) != prev_path.end()) {
+        paths.push_back("(" + std::to_string(it->path.first) + ", " +
+                        std::to_string(it->path.second) + ")");
+        it = prev_path[it];
+      }
+      for (int i = paths.size() - 1; i >= 1; i--) {
+        std::cout << paths[i] << "; ";
+      }
+      std::cout << paths[0] << std::endl;
+      // this will show how many nodes i searched for the answer.
+      std::cout << x << std::endl;
       exit(0);
-      // get path and costs
     } else {
       // add curr node to explored
       // get next nodes by expanding current state
       for (auto it : curr_node->nextNodes()) {
-      	Node *nxt = new Node(it.state, it.heights, it.cost);
-        std::cout << it.cost << std::endl;
-        if (costs.find(nxt) == costs.end() || nxt->cost + curr_cost < costs[nxt]) {
-        	costs[nxt] = it.cost + curr_cost;
-        	pq.push(std::make_tuple(nxt, costs[nxt]));
+        Node *nxt = new Node(it.state, it.heights, it.cost, it.path);
+        if (costs.find(nxt) == costs.end() ||
+            nxt->cost + curr_cost < costs[nxt]) {
+          costs[nxt] = it.cost + curr_cost;
+          pq.push(std::make_tuple(nxt, costs[nxt]));
+          prev_path[nxt] = curr_node;
         }
-        // Node *t = new Node(it.state, it.heights, it.cost);
-        // t->cost += costs[t];
-        // pq.push(t);
-        it.print_grid();
-        // std::cin >> x;
-        // std::cout << "***********************" << std::endl;
       }
     }
   }
@@ -220,28 +219,10 @@ int main() {
   Node *init_node = new Node(a);
   Node *goal_node = new Node(b);
 
-  for (int i = 0; i < a.size(); i++) {
-    for (int j = 0; j < a[i].size(); j++) {
-      std::cout << a[i][j] << ' ';
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "***************" << std::endl;
-
-  // auto nxt_nodes = init_node->nextNodes(init_node);
-  std::cout << "goal node: \n";
-  goal_node->print_grid();
-  std::cout << std::endl;
-
-  // std::cout << init_node->is_goal_node(goal_node) << std::endl;
+  auto nxt_nodes = init_node->nextNodes();
 
   UCS(init_node, goal_node);
-
-  // for (auto it: nxt_nodes) std::cout << it.state[2][0] << std::endl;
-
-  // for (int i = 0; i < init_state->heights.size(); i++) {
-  //   std::cout << init_state->heights[i] << std::endl;
-  // }
+  std::cout << "No solution found\n";
 
   return 0;
 }

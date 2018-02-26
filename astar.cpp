@@ -16,6 +16,7 @@ struct Node {
   std::vector<Node> nextNodes();
   std::vector<int> getHeights(std::vector<std::vector<char>> &s);
   void print_grid();
+  int calculateHeuristic(Node *goal_node);
   Node(){};
   Node(std::vector<std::vector<char>> &s, std::vector<int> &h, int c,
        std::pair<int, int> &p)
@@ -153,9 +154,7 @@ int count_platforms(std::string &in) {
   return p;
 }
 
-void UCS(Node *init_node, Node *goal_node) {
-  // std::cout << "start UCS\n";
-  // all my costs, this can help to see if i find the same node with lower cost
+void Astar(Node *init_node, Node *goal_node) {
   std::map<Node *, int> costs;
   std::map<Node *, Node *> prev_path;
   std::vector<std::string> paths;
@@ -167,18 +166,16 @@ void UCS(Node *init_node, Node *goal_node) {
   costs[init_node] = 0;
   // add init node to the priority_queue
   pq.push(std::make_tuple(init_node, 0));
-  // int x;
+
+  int tims = 0;
   while (!pq.empty()) {
     Node *curr_node;
-    int curr_cost;
-    std::tie(curr_node, curr_cost) = pq.top();
-    // std::cout << "curr_node: " << std::endl;
-    // curr_node->print_grid();
-    // std::cout << "***********************" << std::endl;
-    // std::cout << "(" << curr_node->path.first << ", " <<
-    // curr_node->path.second << ")\n";
+    int estimated_cost;
+    tims++;
+    std::tie(curr_node, estimated_cost) = pq.top();
     pq.pop();
-    if (curr_cost > costs[curr_node]) {
+    if (estimated_cost - curr_node->calculateHeuristic(goal_node) >
+        costs[curr_node]) {
       continue;
     }
 
@@ -196,7 +193,8 @@ void UCS(Node *init_node, Node *goal_node) {
         std::cout << paths[i] << "; ";
       }
       std::cout << paths[0] << std::endl;
-      return;
+      std::cout << tims << std::endl;
+      exit(0);
     } else {
       // add curr node to explored
       // get next nodes by expanding current state
@@ -204,14 +202,40 @@ void UCS(Node *init_node, Node *goal_node) {
         Node *nxt = new Node(it.state, it.heights, it.cost, it.path);
         // std::cout << it.cost << std::endl;
         if (costs.find(nxt) == costs.end() ||
-            nxt->cost + curr_cost < costs[nxt]) {
-          costs[nxt] = it.cost + curr_cost;
-          pq.push(std::make_tuple(nxt, costs[nxt]));
+            nxt->cost + costs[curr_node] < costs[nxt]) {
+          // std::cout << it.cost + curr_cost + it.calculateHeuristic(goal_node)
+          // << std::endl;
+          costs[nxt] = nxt->cost + costs[curr_node];
+          pq.push(std::make_tuple(
+              nxt, costs[nxt] + nxt->calculateHeuristic(goal_node)));
           prev_path[nxt] = curr_node;
+          // std::cout << "este NO\n";
         }
       }
     }
   }
+}
+
+int Node::calculateHeuristic(Node *goal_node) {
+  int heuristic = 0;
+  // std::cout << "CALCULATE HEURIRSTIC\n";
+  // goal_node->print_grid();
+  // std::cout << "";
+  // print_grid();
+  for (int i = 0; i < state[0].size(); i++) {
+    for (int j = 0; j < state.size(); j++) {
+      if (goal_node->state[j][i] == 'X') break;
+      if (state[j][i] == goal_node->state[j][i]) continue;
+      heuristic++;
+    }
+  }
+  for (int i = 0; i < heights.size(); i++) {
+    if (heights[i] == goal_node->heights[i]) continue;
+    heuristic++;
+  }
+  // std::cout << "h: " << heuristic << " cost: " << cost << " path: " <<
+  // path.first << " " << path.second << std::endl;
+  return heuristic;
 }
 
 int main() {
@@ -230,28 +254,12 @@ int main() {
   Node *init_node = new Node(a);
   Node *goal_node = new Node(b);
 
-  // for (int i = 0; i < a.size(); i++) {
-  //   for (int j = 0; j < a[i].size(); j++) {
-  //     std::cout << a[i][j] << ' ';
-  //   }
-  //   std::cout << std::endl;
-  // }
-  // std::cout << "***************" << std::endl;
-
-  auto nxt_nodes = init_node->nextNodes();
-  // std::cout << "goal node: \n";
   // goal_node->print_grid();
-  // std::cout << std::endl;
 
-  // std::cout << init_node->is_goal_node(goal_node) << std::endl;
+  // init_node->calculateHeuristic(goal_node);
 
-  UCS(init_node, goal_node);
-
-  // for (auto it: nxt_nodes) std::cout << it.state[2][0] << std::endl;
-
-  // for (int i = 0; i < init_state->heights.size(); i++) {
-  //   std::cout << init_state->heights[i] << std::endl;
-  // }
+  Astar(init_node, goal_node);
+  std::cout << "No solution found\n";
 
   return 0;
 }

@@ -1,0 +1,3 @@
+#!/bin/sh
+g++ -std=c++11 a_star_incons.cpp -o a_star_incons
+./a_star_incons
