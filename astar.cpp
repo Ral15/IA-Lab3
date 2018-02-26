@@ -1,6 +1,10 @@
-#include <algorithm>
+/*
+Raúl Mar
+A00512318
+https://www.alphagrader.com/courses/13/assignments/99
+*/
+#include <ctime>
 #include <iostream>
-#include <list>
 #include <map>
 #include <memory>
 #include <queue>
@@ -9,21 +13,22 @@
 #include <vector>
 
 struct Node {
+  // vector with curr state
   std::vector<std::vector<char>> state;
+  // the path that will tell from which platform i come from
   std::pair<int, int> path;
-  int cost;
+  // the cost of moving
+  int path_cost;
+  //
   std::vector<int> heights;
   std::vector<Node> nextNodes();
-  std::vector<int> getHeights(std::vector<std::vector<char>> &s);
   void print_grid();
   int calculateHeuristic(Node *goal_node);
   Node(){};
   Node(std::vector<std::vector<char>> &s, std::vector<int> &h, int c,
        std::pair<int, int> &p)
-      : state(s), heights(h), cost(c), path(p){};
+      : state(s), heights(h), path_cost(c), path(p){};
   Node(std::vector<std::vector<char>> &s) : state(s) {
-    // print_grid();
-    // std::cout << "heights: " << std::endl;
     for (int i = 0; i < s[0].size(); i++) {
       int curr_height = 0;
       for (int j = 0; j < s.size(); j++) {
@@ -33,14 +38,13 @@ struct Node {
         else
           curr_height++;
       }
-      // std::cout << "i: " << i << " height: " << curr_height << " \n";
       heights.push_back(curr_height);
     }
-    cost = 0;
+    path_cost = 0;
   }
   bool is_goal_node(Node *goal_node);
 
-  bool operator>(const Node &n) const { return cost > n.cost; }
+  bool operator>(const Node &n) const { return path_cost > n.path_cost; }
 };
 
 void Node::print_grid() {
@@ -81,12 +85,10 @@ class PqCompare {
 };
 
 std::vector<Node> Node::nextNodes() {
-  // vector where I will add all of my nodes
   std::vector<Node> next_nodes;
   // create vector with heights
   // get number of platforms
   int num_platforms = state[0].size();
-  // std::cout << num_platforms << std::endl;
   // go through platforms & expand
   for (int i = 0; i < num_platforms; i++) {
     if (!heights[i]) {
@@ -107,7 +109,6 @@ std::vector<Node> Node::nextNodes() {
         std::swap(state[heights[j]][j], state[heights[i] - 1][i]);
 
       } else {
-        // std::cout << "wut " << i << " " << j << std::endl;
         continue;
       }
     }
@@ -155,6 +156,7 @@ int count_platforms(std::string &in) {
 }
 
 void Astar(Node *init_node, Node *goal_node) {
+  // int start_s=clock();
   std::map<Node *, int> costs;
   std::map<Node *, Node *> prev_path;
   std::vector<std::string> paths;
@@ -180,6 +182,7 @@ void Astar(Node *init_node, Node *goal_node) {
     }
 
     if (curr_node->is_goal_node(goal_node)) {
+      // std::cout << "nodes serched: " << tims << std::endl;
       // print total cost
       std::cout << costs[curr_node] << std::endl;
       // loop to the prev path to create the output path
@@ -193,37 +196,33 @@ void Astar(Node *init_node, Node *goal_node) {
         std::cout << paths[i] << "; ";
       }
       std::cout << paths[0] << std::endl;
-      // std::cout << tims << std::endl;
+      // int stop_s=clock();
+      // std::cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << std::endl;
       exit(0);
     } else {
       // add curr node to explored
       // get next nodes by expanding current state
       for (auto it : curr_node->nextNodes()) {
-        Node *nxt = new Node(it.state, it.heights, it.cost, it.path);
-        // std::cout << it.cost << std::endl;
+        Node *nxt = new Node(it.state, it.heights, it.path_cost, it.path);
         if (costs.find(nxt) == costs.end() ||
-            nxt->cost + costs[curr_node] < costs[nxt]) {
-          // std::cout << it.cost + curr_cost + it.calculateHeuristic(goal_node)
-          // << std::endl;
-          costs[nxt] = nxt->cost + costs[curr_node];
+            nxt->path_cost + costs[curr_node] < costs[nxt]) {
+          costs[nxt] = nxt->path_cost + costs[curr_node];
           pq.push(std::make_tuple(
               nxt, costs[nxt] + nxt->calculateHeuristic(goal_node)));
           prev_path[nxt] = curr_node;
-          // std::cout << "este NO\n";
         }
       }
     }
   }
 }
 
+// calculates the heuristic value of the current node
 int Node::calculateHeuristic(Node *goal_node) {
   int heuristic = 0;
-  // std::cout << "CALCULATE HEURIRSTIC\n";
-  // goal_node->print_grid();
-  // std::cout << "";
-  // print_grid();
+  // iterate through all the state
   for (int i = 0; i < state[0].size(); i++) {
     for (int j = 0; j < state.size(); j++) {
+      // if goal_node has X , skip
       if (goal_node->state[j][i] == 'X') break;
       if (state[j][i] == goal_node->state[j][i]) continue;
       heuristic++;
@@ -233,12 +232,11 @@ int Node::calculateHeuristic(Node *goal_node) {
     if (heights[i] == goal_node->heights[i]) continue;
     heuristic++;
   }
-  // std::cout << "h: " << heuristic << " cost: " << cost << " path: " <<
-  // path.first << " " << path.second << std::endl;
   return heuristic;
 }
 
 int main() {
+  // get max height of platforms, initial state & goal state
   std::string height, i_state, g_state;
   getline(std::cin, height);
   getline(std::cin, i_state);
@@ -246,19 +244,18 @@ int main() {
 
   int max_height = stoi(height);
 
+  // count number of platforms
   int platforms = count_platforms(i_state);
+  // parse the init state & goal state
+  auto parsed_i_state = parse_state(i_state, max_height, platforms);
+  auto parsed_g_state = parse_state(g_state, max_height, platforms);
 
-  auto a = parse_state(i_state, max_height, platforms);
-  auto b = parse_state(g_state, max_height, platforms);
-
-  Node *init_node = new Node(a);
-  Node *goal_node = new Node(b);
-
-  // goal_node->print_grid();
-
-  // init_node->calculateHeuristic(goal_node);
-
+  // create goal & init state
+  Node *init_node = new Node(parsed_i_state);
+  Node *goal_node = new Node(parsed_g_state);
+  // do A* search, exits program if solution found
   Astar(init_node, goal_node);
+  // if no solution found
   std::cout << "No solution found\n";
 
   return 0;

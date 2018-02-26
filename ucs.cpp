@@ -1,3 +1,4 @@
+#include <ctime>
 #include <algorithm>
 #include <iostream>
 #include <list>
@@ -148,6 +149,7 @@ int count_platforms(std::string &in) {
 }
 
 void UCS(Node *init_node, Node *goal_node) {
+  // int start_s=clock();
   // all my costs, this can help to see if i find the same node with lower cost
   std::map<Node *, int> costs;
   std::map<Node *, Node *> prev_path;
@@ -166,12 +168,14 @@ void UCS(Node *init_node, Node *goal_node) {
     int curr_cost;
     x++;
     std::tie(curr_node, curr_cost) = pq.top();
+    // curr_node->print_grid();
     pq.pop();
     if (curr_cost > costs[curr_node]) {
       continue;
     }
     if (curr_node->is_goal_node(goal_node)) {
       // print total cost
+      // std::cout << "nodes searched: " << x << std::endl;
       std::cout << costs[curr_node] << std::endl;
       // loop to the prev path to create the output path
       auto it = curr_node;
@@ -184,8 +188,9 @@ void UCS(Node *init_node, Node *goal_node) {
         std::cout << paths[i] << "; ";
       }
       std::cout << paths[0] << std::endl;
+      // int stop_s=clock();
+      // std::cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << std::endl;
       // this will show how many nodes i searched for the answer.
-      // std::cout << x << std::endl;
       exit(0);
     } else {
       // add curr node to explored
@@ -220,8 +225,9 @@ int main() {
   Node *goal_node = new Node(b);
 
   auto nxt_nodes = init_node->nextNodes();
-
   UCS(init_node, goal_node);
+  
+ 
   std::cout << "No solution found\n";
 
   return 0;

@@ -1,3 +1,4 @@
+#include <ctime>
 #include <stdlib.h>
 #include <time.h>
 #include <algorithm>
@@ -155,6 +156,7 @@ int count_platforms(std::string &in) {
 }
 
 void ShittyAstar(Node *init_node, Node *goal_node) {
+  // int start_s=clock();
   std::map<Node *, int> costs;
   std::map<Node *, Node *> prev_path;
   std::vector<std::string> paths;
@@ -181,6 +183,7 @@ void ShittyAstar(Node *init_node, Node *goal_node) {
 
     if (curr_node->is_goal_node(goal_node)) {
       // print total cost
+      // std::cout << "nodes searched: " << tims << std::endl;
       std::cout << costs[curr_node] << std::endl;
       // loop to the prev path to create the output path
       auto it = curr_node;
@@ -193,7 +196,8 @@ void ShittyAstar(Node *init_node, Node *goal_node) {
         std::cout << paths[i] << "; ";
       }
       std::cout << paths[0] << std::endl;
-      // std::cout << tims << std::endl;
+      // int stop_s=clock();
+      // std::cout << "time: " << (stop_s-start_s)/double(CLOCKS_PER_SEC)*1000 << std::endl;
       exit(0);
     } else {
       // add curr node to explored
