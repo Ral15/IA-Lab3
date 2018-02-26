@@ -185,7 +185,7 @@ void UCS(Node *init_node, Node *goal_node) {
       }
       std::cout << paths[0] << std::endl;
       // this will show how many nodes i searched for the answer.
-      std::cout << x << std::endl;
+      // std::cout << x << std::endl;
       exit(0);
     } else {
       // add curr node to explored

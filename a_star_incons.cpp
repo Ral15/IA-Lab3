@@ -193,7 +193,7 @@ void ShittyAstar(Node *init_node, Node *goal_node) {
         std::cout << paths[i] << "; ";
       }
       std::cout << paths[0] << std::endl;
-      std::cout << tims << std::endl;
+      // std::cout << tims << std::endl;
       exit(0);
     } else {
       // add curr node to explored
