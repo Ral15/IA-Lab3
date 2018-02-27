@@ -146,12 +146,12 @@ We can clearly see that the A\* is the best for finding an answer to this proble
 
 * Why does this happen?
 
-………...
+This happens because with an appropriate heuristic A* is able to further optimize the search with the use of a "better sorted" priority queue. With a good heuristic, the values are more closely weighted by their actual importance in the solution, instead of a mere local minimum. In A* the search expands towards the solution, instead of in a perfect circle as in UCS. On the other hand when A* has an inconsistent heuristic, its information about the nodes and the way they are sorted can no longer be considered an improvement over UCS, and might even be detrimental to finding a good solution.
 
 * Which algorithms are optimal? Why?
 
-…………...
+UCS is optimal because its use of the PQ guarantees, that whenever it expands a node, it has done so via the lowest-cost path to that particular node. So when a solution is found, we know for sure it is an optimal solution. In the case of A* in its three search form, it is optimal only if h(n) is admissible, while the graph version is optimal only if h(n) is consistent. This is because the nodes are always expanded in a non-decreasing way by f(n) value.
 
 * In your opinion, what are the benefits of simpler algorithms versus more complex ones?
 
-…………..
+The use of simpler algorithms can often lead to faster deployment times, reduction of overall program complexity, and in many cases they can be good enough. Simpler algorithms can also be used as an exploratory tool that may lead to a better understanding of the problem and its search-space, this knowledge can then be used in order to create a good heuristic for more complex informed algorithms.
